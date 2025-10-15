@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36518.9
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "items", "items", "{754FC069-D67B-A9D7-50A1-8D1CA196D8F1}"
+	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
+		docker-compose.yaml = docker-compose.yaml
+		Dockerfile = Dockerfile
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmployeeManager.Application", "EmployeeManager.Application\EmployeeManager.Application.csproj", "{F1B6C409-EF6E-749E-F1F7-FE899DD023B9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmployeeManager.Domain", "EmployeeManager.Domain\EmployeeManager.Domain.csproj", "{7617474F-8922-F007-9E0A-F59991314B04}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmployeeManager.Infrastructure", "EmployeeManager.Infrastructure\EmployeeManager.Infrastructure.csproj", "{95B9C298-45EA-FFDF-96C3-A0514957468B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmployeeManager.API", "EmployeeManager.API\EmployeeManager.API.csproj", "{7950F570-0BA0-4CD4-934A-8CEA5D9BBB30}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F1B6C409-EF6E-749E-F1F7-FE899DD023B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1B6C409-EF6E-749E-F1F7-FE899DD023B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1B6C409-EF6E-749E-F1F7-FE899DD023B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1B6C409-EF6E-749E-F1F7-FE899DD023B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7617474F-8922-F007-9E0A-F59991314B04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7617474F-8922-F007-9E0A-F59991314B04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7617474F-8922-F007-9E0A-F59991314B04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7617474F-8922-F007-9E0A-F59991314B04}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95B9C298-45EA-FFDF-96C3-A0514957468B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95B9C298-45EA-FFDF-96C3-A0514957468B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95B9C298-45EA-FFDF-96C3-A0514957468B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95B9C298-45EA-FFDF-96C3-A0514957468B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7950F570-0BA0-4CD4-934A-8CEA5D9BBB30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7950F570-0BA0-4CD4-934A-8CEA5D9BBB30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7950F570-0BA0-4CD4-934A-8CEA5D9BBB30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7950F570-0BA0-4CD4-934A-8CEA5D9BBB30}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {799AFB89-799D-4D5E-A496-A48A8AD891F6}
+	EndGlobalSection
+EndGlobal
