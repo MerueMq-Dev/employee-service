@@ -225,50 +225,10 @@ EmployeeService/
 - **Entities** — доменные модели
 
 ---
-
-## Бизнес-правила
-
-### Связи между сущностями
-
-```
-Company (1) ──→ (*) Department (1) ──→ (*) Employee (1) ──→ (1) Passport
-```
-
-- Один **Company** может иметь несколько **Departments**
-- Один **Department** принадлежит одной **Company**
-- Один **Employee** принадлежит одному **Department**
-- Один **Employee** имеет один **Passport** (1:1)
-
-### Валидация
-
-- При создании/обновлении **Employee** проверяется существование **Company**, **Department** и **Passport**
-- **Passport** может быть привязан только к одному **Employee**
-- При изменении **Department** у **Employee** автоматически обновляется **CompanyId**
-
----
-
-## Особенности реализации
-
-### Partial Updates (PATCH)
-
-Метод `PATCH /api/detailed-employees/{id}` обновляет только переданные поля:
-
-```json
-{
-  "name": "NewName"
-}
-```
-
-Остальные поля остаются без изменений.
-
 ### Detailed Employees vs Employees
 
 - **Employees** — базовый CRUD (только IDs)
 - **Detailed Employees** — расширенный CRUD с вложенными объектами
-
-Используйте **Detailed Employees** для работы согласно требованиям тестового задания.
-
----
 
 ## Примеры использования
 
