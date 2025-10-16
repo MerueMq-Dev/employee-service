@@ -28,8 +28,7 @@ public class CreateDepartmentHandler(
     public async Task<DepartmentDto> Handle(
         CreateDepartmentCommand command,
         CancellationToken cancellationToken)
-    {
-        
+    { 
         await validator.ValidateAndThrowAsync(command);      
 
         bool companyExists = await companyRepository.ExistsAsync(command.CompanyId, cancellationToken);
@@ -38,6 +37,7 @@ public class CreateDepartmentHandler(
         {
             throw new NotFoundException($"Company with {command.CompanyId} does not exist");
         }
+       
 
         DepartmentEntity departmentToCreate = new()
         {

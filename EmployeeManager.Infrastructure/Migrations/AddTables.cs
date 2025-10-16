@@ -11,13 +11,13 @@ namespace EmployeeManager.Infrastructure.Migrations
         {
             Create.Table("companies")
                 .WithColumn("id").AsInt32().PrimaryKey().Identity().NotNullable()
-                .WithColumn("address").AsString(200).Unique().NotNullable()
+                .WithColumn("address").AsString(200).NotNullable()
                 .WithColumn("name").AsString(100).Unique().NotNullable();
 
             Create.Table("departments")
                 .WithColumn("id").AsInt32().PrimaryKey().Identity().NotNullable()
                 .WithColumn("name").AsString(100).NotNullable()
-                .WithColumn("phone").AsString(16).Unique().NotNullable()
+                .WithColumn("phone").AsString(16).NotNullable()
                 .WithColumn("company_id").AsInt32().NotNullable();
 
             Create.ForeignKey("fk_departments_companies")
@@ -36,7 +36,7 @@ namespace EmployeeManager.Infrastructure.Migrations
                 .WithColumn("surname").AsString(25).NotNullable()
                 .WithColumn("phone").AsString(16).NotNullable()
                 .WithColumn("department_id").AsInt32().NotNullable()
-                .WithColumn("passport_id").AsInt32().Nullable().Unique(); // 1:1 связь
+                .WithColumn("passport_id").AsInt32().Nullable().Unique();
 
             Create.ForeignKey("fk_employees_departments")
                 .FromTable("employees").ForeignColumn("department_id")

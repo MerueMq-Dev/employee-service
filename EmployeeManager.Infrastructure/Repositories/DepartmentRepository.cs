@@ -61,6 +61,18 @@ namespace EmployeeManager.Infrastructure.Repositories
             return count > 0;
         }
 
+        public async Task<bool> ExistsByNameAsync(string name, int companyId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+        SELECT COUNT(1) 
+        FROM departments 
+        WHERE name = @Name AND company_id = @CompanyId;
+    ";
+
+            var count = await _db.ExecuteScalarAsync<int>(sql, new { Name = name, CompanyId = companyId });
+            return count > 0;
+        }
+
         public async Task<int> GetCompanyIdByDepartmentIdAsync(int departmentId, CancellationToken cancellationToken)
         {
             const string sql = "SELECT company_id FROM departments WHERE id = @Id";

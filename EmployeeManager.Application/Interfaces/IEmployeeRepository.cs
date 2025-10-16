@@ -13,5 +13,7 @@ namespace EmployeeManager.Application.Interfaces
         public Task<IEnumerable<EmployeeWithDetailsEntity>> GetAllEmployeeWithDetailsAsync(CancellationToken cancellation);
 
         public Task<EmployeeEntity?> GetByPassportIdAsync(int passportId, CancellationToken cancellationToken);
+
+        public Task<EmployeeEntity?> GetByPhoneAsync(string phone, CancellationToken cancellationToken);
     }
 }

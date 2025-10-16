@@ -52,12 +52,26 @@ public class CreateEmployeeWithDetailsHandler(
         if (department is null)      
             throw new NotFoundException($"Department with name {command.Department.Name} does not exist");
 
-        PassportEntity? passport = await passportRepository.GetByNumberAsync(command.Passport.Number);
-        
+        if (department.CompanyId != command.CompanyId)
+            throw new BusinessException(
+                $"Department '{command.Department.Name}' belongs to company {department.CompanyId}, not {command.CompanyId}");
+
+
+        PassportEntity? passport = await passportRepository.GetByNumberAsync(command.Passport.Number, cancellationToken);
+
         if (passport is null)
-        {
-            throw new BusinessException($"Passport with number {command.Passport.Number} alredy exists");
-        }
+            throw new NotFoundException($"Passport with number '{command.Passport.Number}' does not exist");
+
+        EmployeeEntity? employeeWithPassport = await employeeRepository.GetByPassportIdAsync(
+            passport.Id, cancellationToken);
+
+       
+        //EmployeeEntity? employeeWithPhone = await employeeRepository.GetByPhoneAsync(
+        //    command.Phone, cancellationToken);
+
+        //if (employeeWithPhone is not null)
+        //    throw new BusinessException($"Phone '{command.Phone}' is already in use by employee {employeeWithPhone.Id}");
+
 
         EmployeeEntity employeeToCreate = new EmployeeEntity()
         {

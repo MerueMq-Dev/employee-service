@@ -10,6 +10,7 @@ namespace EmployeeManager.Application.Interfaces
         Task<DepartmentEntity?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
 
         public Task<int> GetCompanyIdByDepartmentIdAsync(int departmentId, CancellationToken cancellationToken);
-        
+
+       
     }
 }
