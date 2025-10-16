@@ -64,14 +64,7 @@ public class CreateEmployeeWithDetailsHandler(
 
         EmployeeEntity? employeeWithPassport = await employeeRepository.GetByPassportIdAsync(
             passport.Id, cancellationToken);
-
-       
-        //EmployeeEntity? employeeWithPhone = await employeeRepository.GetByPhoneAsync(
-        //    command.Phone, cancellationToken);
-
-        //if (employeeWithPhone is not null)
-        //    throw new BusinessException($"Phone '{command.Phone}' is already in use by employee {employeeWithPhone.Id}");
-
+      
 
         EmployeeEntity employeeToCreate = new EmployeeEntity()
         {
