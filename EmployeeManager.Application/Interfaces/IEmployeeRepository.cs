@@ -14,6 +14,6 @@ namespace EmployeeManager.Application.Interfaces
 
         public Task<EmployeeEntity?> GetByPassportIdAsync(int passportId, CancellationToken cancellationToken);
 
-        public Task<EmployeeEntity?> GetByPhoneAsync(string phone, CancellationToken cancellationToken);
+        public Task<EmployeeEntity?> GetByPhoneAndDepartmentIdAsync(string phone, int departmentId, CancellationToken cancellationToken);
     }
 }

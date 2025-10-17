@@ -1,5 +1,6 @@
 ﻿using EmployeeManager.Application.DTOs;
 using EmployeeManager.Application.Interfaces;
+using EmployeeManager.Application.Mappers;
 using EmployeeManager.Domain.Entities;
 using EmployeeManager.Domain.Exceptions;
 using FluentValidation;
@@ -33,22 +34,11 @@ public class CreateDepartmentHandler(
             throw new BusinessException($"Passport with number {command.Number} alredy exists");
         }
 
-        PassportEntity passportToCreate = new()
-        {
-            Type = command.Type,
-            Number = command.Number,
-        };
+        PassportEntity passportToCreate = command.ToEntity();
 
         PassportEntity createdPassportEntity = await passportRepository.CreateAsync(passportToCreate,
             cancellationToken);
 
-        PassportDto createdPassport = new ()
-        {
-            Id = createdPassportEntity.Id,
-            Type = createdPassportEntity.Type,
-            Number = createdPassportEntity.Number,
-        };
-
-        return createdPassport;
+        return createdPassportEntity.ToDto();
     }
 }

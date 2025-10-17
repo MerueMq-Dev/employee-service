@@ -10,6 +10,6 @@ namespace EmployeeManager.Application.Interfaces
 {
     public interface ICompanyRepository: IRepository<CompanyEntity>
     {
-        
+        Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default);
     }
 }

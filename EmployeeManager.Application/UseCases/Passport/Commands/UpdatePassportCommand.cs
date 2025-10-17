@@ -1,30 +1,29 @@
 ﻿using EmployeeManager.Application.DTOs;
 using EmployeeManager.Application.Interfaces;
+using EmployeeManager.Application.Mappers;
 using EmployeeManager.Domain.Entities;
 using EmployeeManager.Domain.Exceptions;
 using FluentValidation;
-using FluentValidation.Results;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace EmployeeManager.Application.Passport.Commands
 {
     public record UpdatePassportCommand(int Id, string Type, string Number) : IRequest<PassportDto>;
 
     public class UpdateDepartmentHandler(
+    ILogger<UpdateDepartmentHandler> logger,
     IValidator<UpdatePassportCommand> validator,
     IPassportRepository passportRepository
     ) : IRequestHandler<UpdatePassportCommand, PassportDto>
     {
         public async Task<PassportDto> Handle(UpdatePassportCommand command, CancellationToken cancellationToken)
         {
+            logger.LogInformation("Updating passport with Id {PassportId}", command.Id);
+
             await validator.ValidateAndThrowAsync(command);
 
-            PassportEntity passportToUpdate = new()
-            {
-                Id = command.Id,
-                Type = command.Type,
-                Number = command.Number,              
-            };
+            PassportEntity passportToUpdate = command.ToEntity();
         
             PassportEntity? updatedPassportEntity = await passportRepository.UpdateAsync(passportToUpdate, cancellationToken);
 
@@ -33,14 +32,9 @@ namespace EmployeeManager.Application.Passport.Commands
                 throw new NotFoundException($"Passport with id {command.Id} does not exist");
             }
 
-            PassportDto updatedPassport = new ()
-            {
-                Id = updatedPassportEntity.Id,
-                Type = updatedPassportEntity.Type,
-                Number = updatedPassportEntity.Number,
-            };
+            logger.LogInformation("Passport with id {PassportIc} was updated", updatedPassportEntity.Id);
 
-            return updatedPassport;
+            return updatedPassportEntity.ToDto();
         }
     }
 }

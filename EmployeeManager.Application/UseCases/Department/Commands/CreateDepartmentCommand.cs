@@ -1,10 +1,11 @@
 ﻿using EmployeeManager.Application.DTOs;
 using EmployeeManager.Application.Interfaces;
+using EmployeeManager.Application.Mappers;
 using EmployeeManager.Domain.Entities;
 using EmployeeManager.Domain.Exceptions;
 using FluentValidation;
-using FluentValidation.Results;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace EmployeeManager.Application.UseCases.Department.Commands;
 
@@ -21,7 +22,8 @@ public record CreateDepartmentCommand : IRequest<DepartmentDto>
 public class CreateDepartmentHandler(
     IValidator<CreateDepartmentCommand> validator,
     ICompanyRepository companyRepository,
-    IDepartmentRepository departmentRepository
+    IDepartmentRepository departmentRepository,
+    ILogger<CreateDepartmentHandler> logger
     ) 
     : IRequestHandler<CreateDepartmentCommand, DepartmentDto>
 {
@@ -29,6 +31,10 @@ public class CreateDepartmentHandler(
         CreateDepartmentCommand command,
         CancellationToken cancellationToken)
     { 
+
+        logger.LogInformation("Creating department {DepartmentName} for company {CompanyId}",
+            command.Name, command.CompanyId);
+        
         await validator.ValidateAndThrowAsync(command);      
 
         bool companyExists = await companyRepository.ExistsAsync(command.CompanyId, cancellationToken);
@@ -37,25 +43,34 @@ public class CreateDepartmentHandler(
         {
             throw new NotFoundException($"Company with {command.CompanyId} does not exist");
         }
-       
 
-        DepartmentEntity departmentToCreate = new()
+        bool departmentExists = await departmentRepository.ExistsByNameAndCompanyIdAsync(
+                    command.Name, command.CompanyId, cancellationToken);
+
+        if (departmentExists)
+            throw new BusinessException($"Department with name {command.Name} already exists " +
+                $"in Company with {command.CompanyId}");
+        
+
+        departmentExists = await departmentRepository.ExistsByPhoneAndCompanyIdAsync(
+                    command.Phone, command.CompanyId, cancellationToken);
+
+        if (departmentExists)
         {
-            Name = command.Name,
-            Phone = command.Phone,
-            CompanyId = command.CompanyId
-        };
+            throw new BusinessException($"Department with phone {command.Phone} already exists " +
+                $"in Company with {command.CompanyId}");
+        }
+
+        DepartmentEntity departmentToCreate = command.ToEntity();
+
 
         DepartmentEntity createdDepartmentEntity = await departmentRepository.CreateAsync(departmentToCreate,
             cancellationToken);
 
-        DepartmentDto createdDepartment = new DepartmentDto
-        {
-            Id = createdDepartmentEntity.Id,
-            Name = createdDepartmentEntity.Name,
-            Phone = createdDepartmentEntity.Phone,
-            CompanyId = createdDepartmentEntity.CompanyId
-        };
+        logger.LogInformation("Department with {DepartmentName} was created for company {CompanyId}",
+            createdDepartmentEntity.Name, createdDepartmentEntity.CompanyId);
+
+        DepartmentDto createdDepartment = createdDepartmentEntity.ToDto();
 
         return createdDepartment;
     }

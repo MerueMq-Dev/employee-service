@@ -54,25 +54,13 @@ namespace EmployeeManager.Infrastructure.Repositories
             return count > 0;
         }
 
-        public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default)
+        public async Task<bool> ExistsByNameAndCompanyIdAsync(string name, int companyId, CancellationToken cancellationToken = default)
         {
-            const string sql = "SELECT COUNT(1) FROM departments WHERE name = @Name;";
-            var count = await _db.ExecuteScalarAsync<int>(sql, new { Name = name });
-            return count > 0;
-        }
-
-        public async Task<bool> ExistsByNameAsync(string name, int companyId, CancellationToken cancellationToken = default)
-        {
-            const string sql = @"
-        SELECT COUNT(1) 
-        FROM departments 
-        WHERE name = @Name AND company_id = @CompanyId;
-    ";
-
+            const string sql = "SELECT COUNT(1) FROM departments WHERE name = @Name AND company_id = @CompanyId;";
             var count = await _db.ExecuteScalarAsync<int>(sql, new { Name = name, CompanyId = companyId });
             return count > 0;
         }
-
+                  
         public async Task<int> GetCompanyIdByDepartmentIdAsync(int departmentId, CancellationToken cancellationToken)
         {
             const string sql = "SELECT company_id FROM departments WHERE id = @Id";
@@ -98,15 +86,15 @@ namespace EmployeeManager.Infrastructure.Repositories
 
             return await _db.QuerySingleOrDefaultAsync<DepartmentEntity>(sql, new { Id = id });
         }
-
-        public async Task<DepartmentEntity?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+        
+        public async Task<DepartmentEntity?> GetByNameAndCompanyIdAsync(string name, int companyId, CancellationToken cancellationToken = default)
         {
             const string sql = @"
             SELECT id, name, phone, company_id AS CompanyId
             FROM departments
-            WHERE name = @Name;";
+            WHERE name = @Name AND company_id;";
 
-            return await _db.QuerySingleOrDefaultAsync<DepartmentEntity>(sql, new { Name = name});
+            return await _db.QuerySingleOrDefaultAsync<DepartmentEntity>(sql, new { Name = name, CompanyId = companyId });
         }
 
         public async Task<DepartmentEntity?> UpdateAsync(DepartmentEntity entity, CancellationToken cancellationToken = default)
@@ -128,5 +116,14 @@ namespace EmployeeManager.Infrastructure.Repositories
 
             return updatedDepartment;
         }
+       
+        public async Task<bool> ExistsByPhoneAndCompanyIdAsync(string phone, int companyId, CancellationToken cancellationToken = default)
+        {
+            const string sql = "SELECT COUNT(1) FROM departments WHERE phone = @Name AND company_id = @CompanyId;";
+            var count = await _db.ExecuteScalarAsync<int>(sql, new { Phone = phone, CompanyId = companyId });
+            return count > 0;
+
+        }
+     
     }
 }

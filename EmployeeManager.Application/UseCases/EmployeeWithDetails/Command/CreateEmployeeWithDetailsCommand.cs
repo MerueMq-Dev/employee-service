@@ -38,47 +38,45 @@ public class CreateEmployeeWithDetailsHandler(
     : IRequestHandler<CreateEmployeeWithDetailsCommand, EmployeeWithDetailsDto>
 {
     public async Task<EmployeeWithDetailsDto> Handle(
-        CreateEmployeeWithDetailsCommand command,
-        CancellationToken cancellationToken)
+           CreateEmployeeWithDetailsCommand command,
+           CancellationToken cancellationToken)
     {
         await validator.ValidateAndThrowAsync(command);
 
-        CompanyEntity? company = await companyRepository.GetByIdAsync(command.CompanyId, cancellationToken);
-
-        if(company is null)
+        var company = await companyRepository.GetByIdAsync(command.CompanyId, cancellationToken);
+        if (company is null)
             throw new NotFoundException($"Company with id {command.CompanyId} does not exist");
 
-        DepartmentEntity? department = await departmentRepository.GetByNameAsync(command.Department.Name, cancellationToken);
-        if (department is null)      
-            throw new NotFoundException($"Department with name {command.Department.Name} does not exist");
-
-        if (department.CompanyId != command.CompanyId)
-            throw new BusinessException(
-                $"Department '{command.Department.Name}' belongs to company {department.CompanyId}, not {command.CompanyId}");
-
-
-        PassportEntity? passport = await passportRepository.GetByNumberAsync(command.Passport.Number, cancellationToken);
-
+        var department = await departmentRepository.GetByNameAndCompanyIdAsync(
+            command.Department.Name, command.CompanyId, cancellationToken);
+        if (department is null)
+            throw new NotFoundException($"Department '{command.Department.Name}' does not exist in company {command.CompanyId}");
+        
+        var passport = await passportRepository.GetByNumberAsync(command.Passport.Number, cancellationToken);
         if (passport is null)
             throw new NotFoundException($"Passport with number '{command.Passport.Number}' does not exist");
 
-        EmployeeEntity? employeeWithPassport = await employeeRepository.GetByPassportIdAsync(
-            passport.Id, cancellationToken);
-      
+        var employeeWithPassport = await employeeRepository.GetByPassportIdAsync(passport.Id, cancellationToken);
+        if (employeeWithPassport != null)
+            throw new BusinessException($"Passport is already assigned to employee {employeeWithPassport.Id}");
 
-        EmployeeEntity employeeToCreate = new EmployeeEntity()
+        
+        var employeeWithSamePhone = await employeeRepository.GetByPhoneAndDepartmentIdAsync(command.Phone, department.Id, cancellationToken);
+        if (employeeWithSamePhone != null)
+            throw new BusinessException($"Employee with phone '{command.Phone}' already exists");
+
+        var employeeToCreate = new EmployeeEntity()
         {
             Name = command.Name,
             Surname = command.Surname,
             Phone = command.Phone,
             DepartmentId = department.Id,
             PassportId = passport.Id
-        }; 
+        };
 
-        EmployeeEntity createdEmployeeEntity = await employeeRepository.CreateAsync(employeeToCreate,
-            cancellationToken);
+        var createdEmployeeEntity = await employeeRepository.CreateAsync(employeeToCreate, cancellationToken);
 
-        EmployeeWithDetailsDto createdEmployee = new EmployeeWithDetailsDto
+        return new EmployeeWithDetailsDto
         {
             Id = createdEmployeeEntity.Id,
             Name = createdEmployeeEntity.Name,
@@ -88,7 +86,5 @@ public class CreateEmployeeWithDetailsHandler(
             Department = new DepartmentDetailsDto(department.Name, department.Phone),
             Passport = new PassportDetailsDto(passport.Type, passport.Number)
         };
-
-        return createdEmployee;
     }
 }

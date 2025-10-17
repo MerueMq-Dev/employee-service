@@ -7,6 +7,15 @@ namespace EmployeeManager.Infrastructure.Repositories
 {
     public class CompanyRepository(IDbConnection _db) : ICompanyRepository
     {
+
+        public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default)
+        {
+            const string sql = "SELECT COUNT(1) FROM companies WHERE name = @Name;";
+            var count = await _db.ExecuteScalarAsync<int>(sql, new { Name = name});
+            return count > 0;
+
+        }
+
         public async Task<CompanyEntity> CreateAsync(CompanyEntity company,
             CancellationToken cancellationToken = default)
         {

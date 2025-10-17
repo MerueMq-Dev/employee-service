@@ -4,12 +4,6 @@ using EmployeeManager.Domain.Entities;
 using EmployeeManager.Domain.Exceptions;
 using FluentValidation;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EmployeeManager.Application.UseCases.EmployeeWithDetails.Command
 {
@@ -19,6 +13,8 @@ namespace EmployeeManager.Application.UseCases.EmployeeWithDetails.Command
         public string? Name { get; set; }
         public string? Surname { get; set; }
         public string? Phone { get; set; }
+        public int? CompanyId { get; set; }
+
         public DepartmentDetailsDto? Department { get; set; }
         public PassportDetailsDto? Passport { get; set; }
     }
@@ -27,119 +23,158 @@ namespace EmployeeManager.Application.UseCases.EmployeeWithDetails.Command
     IValidator<UpdateEmployeeWithDetailsCommand> validator,
     IEmployeeRepository employeeRepository,
     IDepartmentRepository departmentRepository,
-    IPassportRepository passportRepository
+    IPassportRepository passportRepository,
+    ICompanyRepository companyRepository
 ) : IRequestHandler<UpdateEmployeeWithDetailsCommand, EmployeeWithDetailsDto>
     {
         public async Task<EmployeeWithDetailsDto> Handle(
-            UpdateEmployeeWithDetailsCommand command,
-            CancellationToken cancellationToken)
+              UpdateEmployeeWithDetailsCommand command,
+              CancellationToken cancellationToken)
         {
+
             await validator.ValidateAndThrowAsync(command, cancellationToken);
 
-            EmployeeEntity? employee = await employeeRepository.GetByIdAsync(command.Id, cancellationToken);
-            if (employee is null)
-                throw new NotFoundException($"Employee with id {command.Id} does not exist");
+            var existingEmployee = await employeeRepository.GetByIdAsync(command.Id, cancellationToken);
+            if (existingEmployee == null)
+                throw new NotFoundException($"Employee with id {command.Id} not found");
 
-            UpdatePersonalData(employee, command);
+            var currentDepartment = await departmentRepository
+                .GetByIdAsync(existingEmployee.DepartmentId, cancellationToken);
+            if (currentDepartment == null)
+                throw new NotFoundException("Current department not found");
 
-            await UpdatePhoneIfNeededAsync(employee, command, cancellationToken);
+            PassportEntity? currentPassport = null;
+            if (existingEmployee.PassportId.HasValue)
+                currentPassport = await passportRepository
+                    .GetByIdAsync(existingEmployee.PassportId.Value, cancellationToken);
 
-            var department = await UpdateDepartmentIfNeededAsync(employee, command, cancellationToken);
 
-            var passport = await UpdatePassportIfNeededAsync(employee, command, cancellationToken);
+            DepartmentEntity? newDepartment = null;
+            if (command.Department != null)
+            {
+                var departmentResult = await ProcessDepartmentUpdateAsync(command, currentDepartment, cancellationToken);
 
-            await employeeRepository.UpdateAsync(employee, cancellationToken);
-            
+                newDepartment = departmentResult;
+                existingEmployee.DepartmentId = newDepartment.Id;
+            }
+
+            if (command.Passport != null)
+            {
+                var passportResult = await ProcessPassportUpdateAsync(command, existingEmployee, currentPassport, cancellationToken);
+                existingEmployee.PassportId = passportResult;
+            }
+
+            UpdateEmployeeFields(existingEmployee, command);
+
+            await employeeRepository.UpdateAsync(existingEmployee, cancellationToken);
+
+            var updatedEmployee = await LoadEmployeeWithDetailsAsync(existingEmployee.Id, cancellationToken);
+            return updatedEmployee;
+
+        }
+
+        private async Task<DepartmentEntity> ProcessDepartmentUpdateAsync(
+            UpdateEmployeeWithDetailsCommand command,
+            DepartmentEntity currentDepartment,
+            CancellationToken ct)
+        {
+            var targetCompanyId = command.CompanyId ?? currentDepartment.CompanyId;
+
+            var company = await companyRepository.GetByIdAsync(targetCompanyId, ct);
+            if (company == null)
+                throw new NotFoundException($"Company with id {targetCompanyId} not found");
+
+            var department = await departmentRepository.GetByNameAndCompanyIdAsync(
+                command.Department!.Name, targetCompanyId, ct);
+
+            if (department == null)
+                throw new NotFoundException($"Department '{command.Department.Name}' not found in company {targetCompanyId}");
+
+            return department;
+        }
+
+        private async Task<int> ProcessPassportUpdateAsync(
+            UpdateEmployeeWithDetailsCommand command,
+            EmployeeEntity employee,
+            PassportEntity? currentPassport,
+            CancellationToken ct)
+        {
+
+            var existingPassport = await passportRepository.GetByNumberAsync(command.Passport!.Number, ct);
+
+            if (existingPassport != null)
+            {
+                var employeeWithPassport = await employeeRepository.GetByPassportIdAsync(existingPassport.Id, ct);
+                if (employeeWithPassport != null && employeeWithPassport.Id != employee.Id)
+                {
+                    throw new BusinessException($"Passport with number '{command.Passport.Number}' already assigned to employee {employeeWithPassport.Id}");
+                }
+
+                if (existingPassport.Type != command.Passport.Type)
+                {
+                    existingPassport.Type = command.Passport.Type;
+                    await passportRepository.UpdateAsync(existingPassport, ct);
+                }
+
+                return existingPassport.Id;
+            }
+
+            throw new NotFoundException($"Passport with number '{command.Passport.Number}' was not found");
+        }
+
+        private void UpdateEmployeeFields(EmployeeEntity employee, UpdateEmployeeWithDetailsCommand command)
+        {
+            if (command.Name != null)
+                employee.Name = command.Name;
+
+            if (command.Surname != null)
+                employee.Surname = command.Surname;
+
+            if (command.Phone != null)
+                employee.Phone = command.Phone;
+        }
+
+        private async Task<EmployeeWithDetailsDto> LoadEmployeeWithDetailsAsync(int employeeId, CancellationToken ct)
+        {
+            var employee = await employeeRepository.GetByIdAsync(employeeId, ct);
+            if (employee == null)
+                throw new InvalidOperationException($"Employee {employeeId} not found after update");
+
+            var department = await departmentRepository.GetByIdAsync(employee.DepartmentId, ct);
+            if (department == null)
+                throw new InvalidOperationException($"Department {employee.DepartmentId} not found");
+
+            var company = await companyRepository.GetByIdAsync(department.CompanyId, ct);
+            if (company == null)
+                throw new InvalidOperationException($"Company {department.CompanyId} not found");
+
+            PassportEntity? passport = null;
+            if (employee.PassportId.HasValue)
+            {
+                passport = await passportRepository.GetByIdAsync(employee.PassportId.Value, ct);
+            }
+
+            return MapToDto(employee, department, company, passport);
+        }
+
+        private EmployeeWithDetailsDto MapToDto(
+            EmployeeEntity employee,
+            DepartmentEntity department,
+            CompanyEntity company,
+            PassportEntity? passport)
+        {
             return new EmployeeWithDetailsDto
             {
                 Id = employee.Id,
                 Name = employee.Name,
                 Surname = employee.Surname,
                 Phone = employee.Phone,
-                CompanyId = department.CompanyId,
+                CompanyId = company.Id,
                 Department = new DepartmentDetailsDto(department.Name, department.Phone),
-                Passport = passport != null
-                    ? new PassportDetailsDto(passport.Type, passport.Number)
-                    : null
+                Passport = passport != null ? new PassportDetailsDto(passport.Type, passport.Number) : null
             };
         }
-
-        private static void UpdatePersonalData(EmployeeEntity employee, UpdateEmployeeWithDetailsCommand command)
-        {
-            if (!string.IsNullOrWhiteSpace(command.Name))
-                employee.Name = command.Name;
-
-            if (!string.IsNullOrWhiteSpace(command.Surname))
-                employee.Surname = command.Surname;
-        }
-
-        private async Task UpdatePhoneIfNeededAsync(
-            EmployeeEntity employee,
-            UpdateEmployeeWithDetailsCommand command,
-            CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrWhiteSpace(command.Phone))
-                return;
-
-            var employeeWithPhone = await employeeRepository.GetByPhoneAsync(command.Phone, cancellationToken);
-
-            if (employeeWithPhone is not null && employeeWithPhone.Id != command.Id)
-                throw new BusinessException($"Phone '{command.Phone}' is already in use by employee {employeeWithPhone.Id}");
-
-            employee.Phone = command.Phone;
-        }
-
-        private async Task<DepartmentEntity> UpdateDepartmentIfNeededAsync(
-            EmployeeEntity employee,
-            UpdateEmployeeWithDetailsCommand command,
-            CancellationToken cancellationToken)
-        {
-            if (command.Department is null)
-                return await departmentRepository.GetByIdAsync(employee.DepartmentId, cancellationToken);
-
-            var newDepartment = await departmentRepository.GetByNameAsync(command.Department.Name, cancellationToken);
-            if (newDepartment is null)
-                throw new NotFoundException($"Department with name '{command.Department.Name}' does not exist");
-
-            var currentDepartment = await departmentRepository.GetByIdAsync(employee.DepartmentId, cancellationToken);
-
-            if (newDepartment.CompanyId != currentDepartment.CompanyId)
-            {
-                throw new BusinessException(
-                    $"Cannot transfer employee to department '{command.Department.Name}' " +
-                    $"because it belongs to company {newDepartment.CompanyId}, " +
-                    $"but employee currently belongs to company {currentDepartment.CompanyId}");
-            }
-
-            employee.DepartmentId = newDepartment.Id;
-            return newDepartment;
-        }
-
-        private async Task<PassportEntity?> UpdatePassportIfNeededAsync(
-            EmployeeEntity employee,
-            UpdateEmployeeWithDetailsCommand command,
-            CancellationToken cancellationToken)
-        {
-            if (command.Passport is null)
-            {
-                return employee.PassportId.HasValue
-                    ? await passportRepository.GetByIdAsync(employee.PassportId.Value, cancellationToken)
-                    : null;
-            }
-
-            var passport = await passportRepository.GetByNumberAsync(command.Passport.Number, cancellationToken);
-            if (passport is null)
-                throw new NotFoundException($"Passport with number '{command.Passport.Number}' does not exist");
-
-            var employeeWithPassport = await employeeRepository.GetByPassportIdAsync(passport.Id, cancellationToken);
-            if (employeeWithPassport is not null && employeeWithPassport.Id != command.Id)
-            {
-                throw new BusinessException(
-                    $"Passport with number '{command.Passport.Number}' is already used by employee {employeeWithPassport.Id}");
-            }
-
-            employee.PassportId = passport.Id;
-            return passport;
-        }
     }
+
 }
+

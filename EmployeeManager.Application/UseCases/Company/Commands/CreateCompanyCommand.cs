@@ -1,9 +1,12 @@
 ﻿using EmployeeManager.Application.DTOs;
 using EmployeeManager.Application.Interfaces;
+using EmployeeManager.Application.Mappers;
 using EmployeeManager.Domain.Entities;
+using EmployeeManager.Domain.Exceptions;
 using FluentValidation;
 using FluentValidation.Results;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace EmployeeManager.Application.UseCases.Company.Commands
 {
@@ -14,6 +17,7 @@ namespace EmployeeManager.Application.UseCases.Company.Commands
     }
 
     public class CreateCompanyHandler(
+        ILogger<CreateCompanyHandler> logger,
        IValidator<CreateCompanyCommand> validator,
        ICompanyRepository companyRepository
        ) : IRequestHandler<CreateCompanyCommand, CompanyDto>
@@ -22,25 +26,24 @@ namespace EmployeeManager.Application.UseCases.Company.Commands
             CreateCompanyCommand command, 
             CancellationToken cancellationToken)
         {
+
+            logger.LogInformation("Creating company with name {CompanyName}", command.Name);
+
             await validator.ValidateAndThrowAsync(command);
 
-            CompanyEntity companyToCreate = new CompanyEntity()
-            {
-                Address = command.Address,
-                Name = command.Name
-            };
+            CompanyEntity companyToCreate = command.ToEntity();
+
+            bool companyExists = await companyRepository.ExistsByNameAsync(command.Name);
+
+            if (companyExists)
+                throw new BusinessException($"Company with name {command.Name} already exists");
 
             CompanyEntity createdCompanyEntity = await companyRepository.CreateAsync(companyToCreate, 
-                cancellationToken);
+                cancellationToken);           
 
-            CompanyDto createdCompany = new CompanyDto
-            {
-                Address = command.Address,
-                Name = command.Name,
-                Id = createdCompanyEntity.Id
-            };
+            logger.LogInformation("Company with name {ComapanyName} was created", command.Name);
 
-            return createdCompany;
+            return createdCompanyEntity.ToDto();
         }
     }
 }

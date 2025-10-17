@@ -1,26 +1,32 @@
 ﻿using EmployeeManager.Application.DTOs;
 using EmployeeManager.Application.Interfaces;
+using EmployeeManager.Application.Mappers;
 using EmployeeManager.Domain.Entities;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace EmployeeManager.Application.Employee.Queries
 {
     public record GetAllEmployeesQuery() : IRequest<IEnumerable<EmployeeDto>>;
 
-    public class GetAllEmployeesHandler(IEmployeeRepository employeeRepository) : IRequestHandler<GetAllEmployeesQuery, IEnumerable<EmployeeDto>>
+    public class GetAllEmployeesHandler(
+        ILogger<GetAllEmployeesHandler> logger,
+        IEmployeeRepository employeeRepository
+        ) : IRequestHandler<GetAllEmployeesQuery, IEnumerable<EmployeeDto>>
     {
-        public async Task<IEnumerable<EmployeeDto>> Handle(GetAllEmployeesQuery query, CancellationToken cancellationToken)
+        public async Task<IEnumerable<EmployeeDto>> Handle(
+            GetAllEmployeesQuery query, 
+            CancellationToken cancellationToken
+        )
         {
-            return (await employeeRepository.GetAllAsync())
-                .Select(c => new EmployeeDto
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    Surname = c.Surname,
-                    Phone = c.Phone,
-                    DepartmentId = c.DepartmentId,
-                    PassportId = c.PassportId
-                });
+            logger.LogInformation("Fetching all employees");
+
+            IEnumerable<EmployeeDto> employees = (await employeeRepository.GetAllAsync())
+                .Select(e => e.ToDto());
+
+            logger.LogInformation("All companies were retrieved");
+            
+            return employees;
         }
     }
 }

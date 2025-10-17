@@ -72,15 +72,17 @@ namespace EmployeeManager.Infrastructure.Repositories
             return await _db.QuerySingleOrDefaultAsync<EmployeeEntity>(sql, new { Id = id });
         }
     
-        public async Task<EmployeeEntity?> GetByPhoneAsync(string phone, CancellationToken cancellationToken = default)
+        public async Task<EmployeeEntity?> GetByPhoneAndDepartmentIdAsync(string phone, int departmentId, CancellationToken cancellationToken = default)
         {
             const string sql = @"
             SELECT id, name, surname, phone, department_id AS DepartmentId, passport_id AS PassportId
             FROM employees
-            WHERE phone = @Phone;";
+            WHERE phone = @Phone AND department_id = @CompanyId;";
 
-            return await _db.QuerySingleOrDefaultAsync<EmployeeEntity>(sql, new { Phone = phone });
+            return await _db.QuerySingleOrDefaultAsync<EmployeeEntity>(sql, new 
+            { Phone = phone, DepartmentId = departmentId });
         }
+
         public async Task<IEnumerable<EmployeeWithDetailsEntity>> GetAllEmployeeWithDetailsAsync(CancellationToken cancellation)
         {
             var sql = @"
