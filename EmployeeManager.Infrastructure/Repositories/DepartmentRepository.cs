@@ -92,7 +92,7 @@ namespace EmployeeManager.Infrastructure.Repositories
             const string sql = @"
             SELECT id, name, phone, company_id AS CompanyId
             FROM departments
-            WHERE name = @Name AND company_id;";
+            WHERE name = @Name AND company_id = @CompanyId;";
 
             return await _db.QuerySingleOrDefaultAsync<DepartmentEntity>(sql, new { Name = name, CompanyId = companyId });
         }
