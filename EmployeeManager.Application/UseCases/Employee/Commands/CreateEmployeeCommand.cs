@@ -41,10 +41,10 @@ public class CreateEmployeeHandler(
 
         if (!departmentExists)     
             throw new NotFoundException($"Department with {command.DepartmentId} does not exist");
-        
+;
 
-        if(command.PassportId is not null && 
-            employeeRepository.GetByPassportIdAsync(command.PassportId.Value, cancellationToken) is not null)       
+        if (command.PassportId is not null &&
+            (await employeeRepository.GetByPassportIdAsync(command.PassportId.Value, cancellationToken))  is not null)       
             throw new BusinessException($"Passport with id {command.PassportId.Value} alredy used");
         
         EmployeeEntity? employee = await employeeRepository.GetByPhoneAndDepartmentIdAsync(command.Phone, command.DepartmentId ,cancellationToken);

@@ -77,7 +77,7 @@ namespace EmployeeManager.Infrastructure.Repositories
             const string sql = @"
             SELECT id, name, surname, phone, department_id AS DepartmentId, passport_id AS PassportId
             FROM employees
-            WHERE phone = @Phone AND department_id = @CompanyId;";
+            WHERE phone = @Phone AND department_id = @DepartmentId;";
 
             return await _db.QuerySingleOrDefaultAsync<EmployeeEntity>(sql, new 
             { Phone = phone, DepartmentId = departmentId });
