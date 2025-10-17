@@ -32,7 +32,7 @@ namespace EmployeeManager.Application.Validators.Department
                 .Matches(@"^\+?[0-9\s\-\(\)]{10,20}$")
                 .WithMessage("Phone number format is invalid");
 
-            RuleFor(c => c.DeportamentId)
+            RuleFor(c => c.DepartmentId)
                 .NotNull()
                 .GreaterThanOrEqualTo(1)
                 .WithMessage("Company Id can not be less then 1");
